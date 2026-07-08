@@ -36,5 +36,11 @@ else
   echo "=== $DB 已存在（持久盘），跳过 Secret File 恢复 ==="
 fi
 
-# 以非 root 用户启动（与官方 entrypoint 行为一致：exec su-exec node "$@"）
+# 以非 root 用户启动（与官方 entrypoint 行为一致：su-exec node "$@"）
+# 兜底：部分平台（如 Render）运行时不向 ENTRYPOINT 传递 CMD，导致 $@ 为空，
+# 此时 su-exec 直接打印 "Usage: su-exec user-spec command [args]" 并以状态 1 退出。
+# 若未收到任何参数，默认启动 9Router 的独立 server（/app/custom-server.js）。
+if [ "$#" -eq 0 ]; then
+  set -- node /app/custom-server.js
+fi
 exec su-exec node "$@"
